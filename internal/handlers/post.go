@@ -12,7 +12,7 @@ import (
 
 func WriteURL(res http.ResponseWriter, req *http.Request, store store.Store) {
 	contentTypeValue := req.Header.Get("Content-Type")
-	if contentTypeValue != "text/plain" {
+	if contentTypeValue != "text/plain; charset=utf-8" {
 		res.WriteHeader(http.StatusBadRequest)
 		return
 	}

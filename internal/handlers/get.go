@@ -9,7 +9,7 @@ import (
 
 func SearchURL(res http.ResponseWriter, req *http.Request, store store.Store) {
 	contentTypeValue := req.Header.Get("Content-Type")
-	if contentTypeValue != "text/plain" {
+	if contentTypeValue != "text/plain; charset=utf-8" {
 		log.Printf("Incorrect Content-Type: %s", contentTypeValue)
 		res.WriteHeader(http.StatusBadRequest)
 		return
