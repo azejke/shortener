@@ -23,12 +23,12 @@ func TestSearchURL(t *testing.T) {
 	}
 	tests := []struct {
 		name  string
-		urlId string
+		urlID string
 		want  want
 	}{
 		{
 			name:  "Exist id test",
-			urlId: "knKvtdNoxw",
+			urlID: "knKvtdNoxw",
 			want: want{
 				contentType: "text/plain; charset=utf-8",
 				statusCode:  307,
@@ -37,14 +37,14 @@ func TestSearchURL(t *testing.T) {
 		},
 		{
 			name:  "Doesn't exist id test",
-			urlId: "anBvtENHxw",
+			urlID: "anBvtENHxw",
 			want: want{
 				statusCode: 400,
 			},
 		},
 		{
 			name:  "Empty id test",
-			urlId: "",
+			urlID: "",
 			want: want{
 				statusCode: 400,
 			},
@@ -53,7 +53,7 @@ func TestSearchURL(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			request := httptest.NewRequest(http.MethodGet, fmt.Sprintf("http://localhost:8080/%s", tt.urlId), nil)
+			request := httptest.NewRequest(http.MethodGet, fmt.Sprintf("http://localhost:8080/%s", tt.urlID), nil)
 			w := httptest.NewRecorder()
 			h := http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 				SearchURL(writer, request, Store)
