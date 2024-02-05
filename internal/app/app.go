@@ -7,10 +7,6 @@ import (
 )
 
 func Run(res http.ResponseWriter, req *http.Request, store store.Store) {
-	webhook(res, req, store)
-}
-
-func webhook(res http.ResponseWriter, req *http.Request, store store.Store) {
 	switch req.Method {
 	case http.MethodGet:
 		handlers.SearchURL(res, req, store)

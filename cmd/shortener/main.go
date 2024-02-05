@@ -9,9 +9,10 @@ import (
 var Store store.Store = make(map[string]string)
 
 func main() {
-	err := http.ListenAndServe(`:8080`, http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+	http.HandleFunc("/", func(writer http.ResponseWriter, request *http.Request) {
 		app.Run(writer, request, Store)
-	}))
+	})
+	err := http.ListenAndServe(`:8080`, nil)
 	if err != nil {
 		panic(err)
 	}
