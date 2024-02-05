@@ -12,12 +12,13 @@ import (
 
 func WriteURL(res http.ResponseWriter, req *http.Request, store store.Store) {
 	contentTypeValue := req.Header.Get("Content-Type")
+	log.Printf("Content-Type value: %s", contentTypeValue)
 	if contentTypeValue != "text/plain; charset=utf-8" {
 		res.WriteHeader(http.StatusBadRequest)
 		return
 	}
 	body, err := io.ReadAll(req.Body)
-	log.Printf("Content-Type value: %s", contentTypeValue)
+	log.Printf("Body: %s", string(body))
 	if err != nil || len(body) == 0 {
 		res.WriteHeader(http.StatusBadRequest)
 		return
@@ -30,7 +31,7 @@ func WriteURL(res http.ResponseWriter, req *http.Request, store store.Store) {
 	if req.TLS != nil {
 		scheme = "https"
 	}
-	res.Header().Set(`Content-Type`, `text/plain`)
+	res.Header().Set(`Content-Type`, `text/plain; charset=utf-8`)
 	res.WriteHeader(http.StatusCreated)
 	result := fmt.Sprintf("%s://%s/%s", scheme, host, generatedKey)
 	log.Printf("Result value: %s", result)

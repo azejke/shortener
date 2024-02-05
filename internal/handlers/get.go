@@ -17,7 +17,7 @@ func SearchURL(res http.ResponseWriter, req *http.Request, store store.Store) {
 		return
 	}
 	log.Printf("URL value: %s", urlValue)
-	res.Header().Set("Content-Type", "text/plain")
+	res.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	res.Header().Set("Location", urlValue)
 	res.WriteHeader(http.StatusTemporaryRedirect)
 }
