@@ -11,11 +11,16 @@ import (
 )
 
 func WriteURL(res http.ResponseWriter, req *http.Request, store store.Store) {
-	body, err := io.ReadAll(req.Body)
 	contentTypeValue := req.Header.Get("Content-Type")
-	log.Printf("Content-Type value: %s", contentTypeValue)
-	if err != nil || len(body) == 0 || contentTypeValue != "text/plain" {
+	if contentTypeValue != "text/plain" {
 		res.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	body, err := io.ReadAll(req.Body)
+	log.Printf("Content-Type value: %s", contentTypeValue)
+	if err != nil || len(body) == 0 {
+		res.WriteHeader(http.StatusBadRequest)
+		return
 	}
 	generatedKey := generateRandomString(10)
 	store[generatedKey] = string(body)
