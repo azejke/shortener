@@ -43,7 +43,8 @@ func TestSearchURL(t *testing.T) {
 			},
 		},
 		{
-			name: "Empty id test",
+			name:  "Empty id test",
+			urlId: "",
 			want: want{
 				statusCode: 400,
 			},
@@ -62,6 +63,8 @@ func TestSearchURL(t *testing.T) {
 			assert.Equal(t, tt.want.statusCode, result.StatusCode)
 			assert.Equal(t, tt.want.location, result.Header.Get("Location"))
 			assert.Equal(t, tt.want.contentType, result.Header.Get("Content-Type"))
+			err := result.Body.Close()
+			require.NoError(t, err)
 		})
 	}
 }
@@ -110,8 +113,6 @@ func TestWriteURL(t *testing.T) {
 				assert.Equal(t, tt.want.contentType, result.Header.Get("Content-Type"))
 				response, err := io.ReadAll(result.Body)
 				require.NoError(t, err)
-				err = result.Body.Close()
-				require.NoError(t, err)
 				formattedResponse := strings.Split(string(response), "/")
 				id := formattedResponse[len(formattedResponse)-1]
 				_, ok := Store[id]
@@ -119,6 +120,9 @@ func TestWriteURL(t *testing.T) {
 					t.Errorf("The URL %s are not added", tt.url)
 				}
 			}
+
+			err := result.Body.Close()
+			require.NoError(t, err)
 		})
 	}
 }
