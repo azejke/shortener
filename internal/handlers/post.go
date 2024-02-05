@@ -27,10 +27,14 @@ func WriteURL(res http.ResponseWriter, req *http.Request, store store.Store) {
 	host := req.Host
 	log.Printf("Host: %s", host)
 	res.Header().Set(`Content-Type`, `text/plain`)
-	res.WriteHeader(http.StatusCreated)
-	result := fmt.Sprintf("http://%s/%s", host, generatedKey)
+	scheme := "http"
+	if req.TLS != nil {
+		scheme = "https"
+	}
+	result := fmt.Sprintf("%s://%s/%s", scheme, host, generatedKey)
 	log.Printf("Result value: %s", result)
 	_, _ = res.Write([]byte(result))
+	res.WriteHeader(http.StatusCreated)
 }
 
 func generateRandomString(length int) string {
