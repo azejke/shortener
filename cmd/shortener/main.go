@@ -1,15 +1,14 @@
 package main
 
 import (
+	"github.com/azejke/shortener/config"
 	"github.com/azejke/shortener/internal/handlers"
-	"github.com/azejke/shortener/internal/store"
 	"net/http"
 )
 
-var globalStore store.Store = make(map[string]string)
-
 func main() {
-	err := http.ListenAndServe(`:8080`, handlers.RoutesBuilder(globalStore))
+	c := config.DefaultConfig.InitConfig()
+	err := http.ListenAndServe(c.ServerAddress, handlers.RoutesBuilder())
 	if err != nil {
 		panic(err)
 	}
