@@ -12,9 +12,8 @@ import (
 )
 
 func TestSearchURL(t *testing.T) {
-	var Store = store.Store{
-		"knKvtdNoxw": "https://practicum.yandex.kz/",
-	}
+	Store := *&store.Store
+	Store["knKvtdNoxw"] = "https://practicum.yandex.kz/"
 	ts := httptest.NewServer(RoutesBuilder())
 	ts.Client().CheckRedirect = func(req *http.Request, via []*http.Request) error {
 		return http.ErrUseLastResponse
@@ -62,7 +61,7 @@ func TestSearchURL(t *testing.T) {
 }
 
 func TestWriteURL(t *testing.T) {
-	Store := make(store.Store)
+	Store := *&store.Store
 	ts := httptest.NewServer(RoutesBuilder())
 	defer ts.Close()
 
