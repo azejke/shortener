@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"github.com/azejke/shortener/config"
 	"github.com/azejke/shortener/internal/store"
 	"github.com/azejke/shortener/internal/utils"
 	"github.com/go-chi/chi/v5"
@@ -11,22 +12,23 @@ import (
 	"net/http"
 )
 
-func RoutesBuilder(store store.Store) chi.Router {
+func RoutesBuilder() chi.Router {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Get("/{id}", func(writer http.ResponseWriter, request *http.Request) {
-		SearchURL(writer, request, store)
+		SearchURL(writer, request)
 	})
 	r.Post("/", func(writer http.ResponseWriter, request *http.Request) {
-		WriteURL(writer, request, store)
+		WriteURL(writer, request)
 	})
 	return r
 }
 
-func SearchURL(res http.ResponseWriter, req *http.Request, store store.Store) {
+func SearchURL(res http.ResponseWriter, req *http.Request) {
+	s := *&store.Store
 	id := chi.URLParam(req, "id")
 	log.Printf("Received id: %s", id)
-	urlValue, ok := store[id]
+	urlValue, ok := s[id]
 	if !ok || len(id) == 0 {
 		log.Println("URL is empty or doesn't exist")
 		res.WriteHeader(http.StatusBadRequest)
@@ -38,7 +40,7 @@ func SearchURL(res http.ResponseWriter, req *http.Request, store store.Store) {
 	res.WriteHeader(http.StatusTemporaryRedirect)
 }
 
-func WriteURL(res http.ResponseWriter, req *http.Request, store store.Store) {
+func WriteURL(res http.ResponseWriter, req *http.Request) {
 	contentTypeValue := req.Header.Get("Content-Type")
 	log.Printf("Content-Type value: %s", contentTypeValue)
 	if contentTypeValue != "text/plain; charset=utf-8" {
@@ -52,16 +54,13 @@ func WriteURL(res http.ResponseWriter, req *http.Request, store store.Store) {
 		return
 	}
 	generatedKey := utils.GenerateRandomString(10)
-	store[generatedKey] = string(body)
-	host := req.Host
-	log.Printf("Host: %s", host)
-	scheme := "http"
-	if req.TLS != nil {
-		scheme = "https"
-	}
+	s := *&store.Store
+	s[generatedKey] = string(body)
+	c := *&config.DefaultConfig
+	log.Printf("baseURL: %s", c.BaseURL)
 	res.Header().Set(`Content-Type`, `text/plain; charset=utf-8`)
 	res.WriteHeader(http.StatusCreated)
-	result := fmt.Sprintf("%s://%s/%s", scheme, host, generatedKey)
+	result := fmt.Sprintf("%s%s/%s", c.BaseURL, c.ServerAddress, generatedKey)
 	log.Printf("Result value: %s", result)
 	_, _ = res.Write([]byte(result))
 }
