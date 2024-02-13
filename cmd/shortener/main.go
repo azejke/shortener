@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	c := config.DefaultConfig.InitConfig()
+	c := config.InitConfig()
 	err := http.ListenAndServe(c.ServerAddress, handlers.RoutesBuilder())
 	if err != nil {
 		panic(err)
