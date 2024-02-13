@@ -56,11 +56,11 @@ func WriteURL(res http.ResponseWriter, req *http.Request) {
 	generatedKey := utils.GenerateRandomString(10)
 	s := store.Store
 	s[generatedKey] = string(body)
-	c := config.DefaultConfig
-	log.Printf("baseURL: %s", c.BaseURL)
+	baseUrl := config.DefaultConfig.BaseURL
+	log.Printf("BaseURL: %s", baseUrl)
 	res.Header().Set(`Content-Type`, `text/plain; charset=utf-8`)
 	res.WriteHeader(http.StatusCreated)
-	result := fmt.Sprintf("%s%s/%s", c.BaseURL, c.ServerAddress, generatedKey)
+	result := fmt.Sprintf("%s%s", baseUrl, generatedKey)
 	log.Printf("Result value: %s", result)
 	_, _ = res.Write([]byte(result))
 }
