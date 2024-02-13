@@ -25,7 +25,7 @@ func RoutesBuilder() chi.Router {
 }
 
 func SearchURL(res http.ResponseWriter, req *http.Request) {
-	s := *&store.Store
+	s := store.Store
 	id := chi.URLParam(req, "id")
 	log.Printf("Received id: %s", id)
 	urlValue, ok := s[id]
@@ -54,9 +54,9 @@ func WriteURL(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 	generatedKey := utils.GenerateRandomString(10)
-	s := *&store.Store
+	s := store.Store
 	s[generatedKey] = string(body)
-	c := *&config.DefaultConfig
+	c := config.DefaultConfig
 	log.Printf("baseURL: %s", c.BaseURL)
 	res.Header().Set(`Content-Type`, `text/plain; charset=utf-8`)
 	res.WriteHeader(http.StatusCreated)
