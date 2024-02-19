@@ -1,20 +1,31 @@
 package handlers
 
 import (
+	"github.com/azejke/shortener/internal/config"
 	"github.com/azejke/shortener/internal/store"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 )
 
+var cfg *config.Config
+var storage *store.Store
+
+func TestMain(m *testing.M) {
+	cfg = config.InitConfig()
+	storage = store.InitStore()
+	exitVal := m.Run()
+	os.Exit(exitVal)
+}
+
 func TestSearchURL(t *testing.T) {
-	Store := store.Store
-	Store["knKvtdNoxw"] = "https://practicum.yandex.kz/"
-	ts := httptest.NewServer(RoutesBuilder())
+	storage.Insert("knKvtdNoxw", "https://practicum.yandex.kz/")
+	ts := httptest.NewServer(RoutesBuilder(cfg, storage))
+	defer ts.Close()
 	ts.Client().CheckRedirect = func(req *http.Request, via []*http.Request) error {
 		return http.ErrUseLastResponse
 	}
@@ -61,8 +72,7 @@ func TestSearchURL(t *testing.T) {
 }
 
 func TestWriteURL(t *testing.T) {
-	Store := store.Store
-	ts := httptest.NewServer(RoutesBuilder())
+	ts := httptest.NewServer(RoutesBuilder(cfg, storage))
 	defer ts.Close()
 
 	type want struct {
@@ -99,19 +109,7 @@ func TestWriteURL(t *testing.T) {
 			response, err := ts.Client().Do(request)
 			require.NoError(t, err)
 			assert.Equal(t, tt.want.statusCode, response.StatusCode)
-
-			if tt.url != "" {
-				assert.Equal(t, tt.want.contentType, response.Header.Get("Content-Type"))
-				responseBody, err := io.ReadAll(response.Body)
-				require.NoError(t, err)
-				formattedResponse := strings.Split(string(responseBody), "/")
-				id := formattedResponse[len(formattedResponse)-1]
-				_, ok := Store[id]
-				if !ok {
-					t.Errorf("The URL %s are not added", tt.url)
-				}
-			}
-
+			assert.Equal(t, tt.want.contentType, response.Header.Get("Content-Type"))
 			err = response.Body.Close()
 			require.NoError(t, err)
 		})

@@ -2,33 +2,27 @@ package handlers
 
 import (
 	"fmt"
-	"github.com/azejke/shortener/config"
+	"github.com/azejke/shortener/internal/config"
 	"github.com/azejke/shortener/internal/store"
 	"github.com/azejke/shortener/internal/utils"
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
 	"io"
 	"log"
 	"net/http"
 )
 
-func RoutesBuilder() chi.Router {
-	r := chi.NewRouter()
-	r.Use(middleware.Logger)
-	r.Get("/{id}", func(writer http.ResponseWriter, request *http.Request) {
-		SearchURL(writer, request)
-	})
-	r.Post("/", func(writer http.ResponseWriter, request *http.Request) {
-		WriteURL(writer, request)
-	})
-	return r
+type IURLHandler interface {
+	SearchURL(res http.ResponseWriter, req *http.Request)
+	WriteURL(res http.ResponseWriter, req *http.Request, cfg *config.Config)
 }
 
-func SearchURL(res http.ResponseWriter, req *http.Request) {
-	s := store.Store
+type URLHandler struct {
+	storage *store.Store
+}
+
+func (u *URLHandler) SearchURL(res http.ResponseWriter, req *http.Request) {
 	id := chi.URLParam(req, "id")
-	log.Printf("Received id: %s", id)
-	urlValue, ok := s[id]
+	urlValue, ok := u.storage.Get(id)
 	if !ok || len(id) == 0 {
 		log.Println("URL is empty or doesn't exist")
 		res.WriteHeader(http.StatusBadRequest)
@@ -40,7 +34,7 @@ func SearchURL(res http.ResponseWriter, req *http.Request) {
 	res.WriteHeader(http.StatusTemporaryRedirect)
 }
 
-func WriteURL(res http.ResponseWriter, req *http.Request) {
+func (u *URLHandler) WriteURL(res http.ResponseWriter, req *http.Request, cfg *config.Config) {
 	contentTypeValue := req.Header.Get("Content-Type")
 	log.Printf("Content-Type value: %s", contentTypeValue)
 	if contentTypeValue != "text/plain; charset=utf-8" {
@@ -54,13 +48,11 @@ func WriteURL(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 	generatedKey := utils.GenerateRandomString(10)
-	s := store.Store
-	s[generatedKey] = string(body)
-	baseURL := config.DefaultConfig.BaseURL
-	log.Printf("BaseURL: %s", baseURL)
+	u.storage.Insert(generatedKey, string(body))
+	log.Printf("BaseURL: %s", cfg.BaseURL)
 	res.Header().Set(`Content-Type`, `text/plain; charset=utf-8`)
 	res.WriteHeader(http.StatusCreated)
-	result := fmt.Sprintf("%s/%s", baseURL, generatedKey)
+	result := fmt.Sprintf("%s/%s", cfg.BaseURL, generatedKey)
 	log.Printf("Result value: %s", result)
 	_, _ = res.Write([]byte(result))
 }
