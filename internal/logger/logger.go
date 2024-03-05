@@ -39,6 +39,7 @@ func RequestLogger(next http.Handler) http.Handler {
 			zap.String("method", r.Method),
 			zap.String("path", r.URL.Path),
 			zap.Duration("duration", duration),
+			zap.String("location", rw.Header().Get("Location")),
 			zap.Int("status", rw.Code()),
 			zap.Int("size", rw.Size()),
 		)
