@@ -92,7 +92,7 @@ func TestURLHandler_WriteURL(t *testing.T) {
 			url:  "https://practicum.yandex.kz",
 			want: want{
 				statusCode:  201,
-				contentType: "text/plain",
+				contentType: "text/plain; charset=utf-8",
 			},
 		},
 		{
