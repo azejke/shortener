@@ -53,7 +53,6 @@ func (u *URLHandler) WriteURL(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 	res.WriteHeader(http.StatusBadRequest)
-	return
 }
 
 func (u *URLHandler) Shorten(res http.ResponseWriter, req *http.Request) {
