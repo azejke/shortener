@@ -21,6 +21,7 @@ type IURLHandler interface {
 
 type URLHandler struct {
 	storage *store.Store
+	cfg     *config.Config
 }
 
 func (u *URLHandler) SearchURL(res http.ResponseWriter, req *http.Request) {
@@ -35,7 +36,7 @@ func (u *URLHandler) SearchURL(res http.ResponseWriter, req *http.Request) {
 	res.WriteHeader(http.StatusTemporaryRedirect)
 }
 
-func (u *URLHandler) WriteURL(res http.ResponseWriter, req *http.Request, cfg *config.Config) {
+func (u *URLHandler) WriteURL(res http.ResponseWriter, req *http.Request) {
 	contentTypeValue := req.Header.Get("Content-Type")
 	if contentTypeValue != "text/plain; charset=utf-8" {
 		res.WriteHeader(http.StatusBadRequest)
@@ -48,14 +49,13 @@ func (u *URLHandler) WriteURL(res http.ResponseWriter, req *http.Request, cfg *c
 	}
 	generatedKey := utils.GenerateRandomString(10)
 	u.storage.Insert(generatedKey, string(body))
-	//log.Printf("BaseURL: %s", cfg.BaseURL)
 	res.Header().Set(`Content-Type`, `text/plain; charset=utf-8`)
 	res.WriteHeader(http.StatusCreated)
-	result := fmt.Sprintf("%s/%s", cfg.BaseURL, generatedKey)
+	result := fmt.Sprintf("%s/%s", u.cfg.BaseURL, generatedKey)
 	_, _ = res.Write([]byte(result))
 }
 
-func (u *URLHandler) Shorten(res http.ResponseWriter, req *http.Request, cfg *config.Config) {
+func (u *URLHandler) Shorten(res http.ResponseWriter, req *http.Request) {
 	contentTypeValue := req.Header.Get("Content-Type")
 	if contentTypeValue != "application/json" {
 		res.WriteHeader(http.StatusBadRequest)
@@ -79,7 +79,7 @@ func (u *URLHandler) Shorten(res http.ResponseWriter, req *http.Request, cfg *co
 	var result models.ShortenResponse
 	generatedKey := utils.GenerateRandomString(10)
 	u.storage.Insert(generatedKey, url.URL)
-	result.Result = fmt.Sprintf("%s/%s", cfg.BaseURL, generatedKey)
+	result.Result = fmt.Sprintf("%s/%s", u.cfg.BaseURL, generatedKey)
 	resp, err := json.Marshal(result)
 	if err != nil {
 		http.Error(res, "Encoding error", http.StatusInternalServerError)
