@@ -58,7 +58,7 @@ func (u *URLHandler) SearchURL(res http.ResponseWriter, req *http.Request) {
 
 func (u *URLHandler) WriteURL(res http.ResponseWriter, req *http.Request) {
 	contentTypeValue := req.Header.Get("Content-Type")
-	if !u.checkContentType(contentTypeValue, "text/plain; charset=utf-8") {
+	if !u.checkContentType(contentTypeValue, "text/plain; charset=utf-8", "application/x-gzip") {
 		res.WriteHeader(http.StatusBadRequest)
 		return
 	}
