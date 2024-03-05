@@ -10,18 +10,37 @@ import (
 	"github.com/azejke/shortener/internal/utils"
 	"github.com/go-chi/chi/v5"
 	"io"
+	"log"
 	"net/http"
 )
 
 type IURLHandler interface {
 	SearchURL(res http.ResponseWriter, req *http.Request)
-	WriteURL(res http.ResponseWriter, req *http.Request, cfg *config.Config)
-	Shorten(res http.ResponseWriter, req *http.Request, cfg *config.Config)
+	WriteURL(res http.ResponseWriter, req *http.Request)
+	Shorten(res http.ResponseWriter, req *http.Request)
+	generateAndInsertKey(url string) string
+	checkContentType(contentType string, expectedContentType ...string) bool
 }
 
 type URLHandler struct {
 	storage *store.Store
 	cfg     *config.Config
+}
+
+func (u *URLHandler) checkContentType(actualContentType string, expectedContentType ...string) bool {
+	isExist := false
+	for _, v := range expectedContentType {
+		if v == actualContentType {
+			isExist = true
+		}
+	}
+	return isExist
+}
+
+func (u *URLHandler) generateAndInsertKey(url string) string {
+	generatedKey := utils.GenerateRandomString(10)
+	u.storage.Insert(generatedKey, url)
+	return generatedKey
 }
 
 func (u *URLHandler) SearchURL(res http.ResponseWriter, req *http.Request) {
@@ -31,34 +50,34 @@ func (u *URLHandler) SearchURL(res http.ResponseWriter, req *http.Request) {
 		res.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	res.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	fmt.Println(urlValue)
+	res.Header().Set("Content-Type", "text/plain")
+	fmt.Println("urlValue", urlValue)
 	res.Header().Set("Location", urlValue)
 	res.WriteHeader(http.StatusTemporaryRedirect)
 }
 
 func (u *URLHandler) WriteURL(res http.ResponseWriter, req *http.Request) {
 	contentTypeValue := req.Header.Get("Content-Type")
-	if contentTypeValue == "text/plain; charset=utf-8" || contentTypeValue == "application/x-gzip" {
-		body, err := io.ReadAll(req.Body)
-		if err != nil || len(body) == 0 {
-			res.WriteHeader(http.StatusBadRequest)
-			return
-		}
-		generatedKey := utils.GenerateRandomString(10)
-		u.storage.Insert(generatedKey, string(body))
-		res.Header().Set(`Content-Type`, `text/plain; charset=utf-8`)
-		res.WriteHeader(http.StatusCreated)
-		result := fmt.Sprintf("%s/%s", u.cfg.BaseURL, generatedKey)
-		_, _ = res.Write([]byte(result))
+	if !u.checkContentType(contentTypeValue, "text/plain") {
+		res.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	res.WriteHeader(http.StatusBadRequest)
+	body, err := io.ReadAll(req.Body)
+	if err != nil || len(body) == 0 {
+		res.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	res.Header().Set(`Content-Type`, `text/plain`)
+	res.WriteHeader(http.StatusCreated)
+	key := u.generateAndInsertKey(string(body))
+	result := fmt.Sprintf("%s/%s", u.cfg.BaseURL, key)
+	_, _ = res.Write([]byte(result))
 }
 
 func (u *URLHandler) Shorten(res http.ResponseWriter, req *http.Request) {
 	contentTypeValue := req.Header.Get("Content-Type")
-	if contentTypeValue != "application/json" {
+	if !u.checkContentType(contentTypeValue, "application/json") {
 		res.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -78,10 +97,10 @@ func (u *URLHandler) Shorten(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 	var result models.ShortenResponse
-	generatedKey := utils.GenerateRandomString(10)
-	u.storage.Insert(generatedKey, url.URL)
-	result.Result = fmt.Sprintf("%s/%s", u.cfg.BaseURL, generatedKey)
+	key := u.generateAndInsertKey(url.URL)
+	result.Result = fmt.Sprintf("%s/%s", u.cfg.BaseURL, key)
 	resp, err := json.Marshal(result)
+	log.Println("resp", result.Result)
 	if err != nil {
 		http.Error(res, "Encoding error", http.StatusInternalServerError)
 		return

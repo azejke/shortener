@@ -8,12 +8,22 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 )
 
+var defaultCompressibleContentTypes = []string{
+	"text/html",
+	"text/css",
+	"text/plain",
+	"text/xml",
+	"text/javascript",
+	"application/javascript",
+	"application/json",
+}
+
 func RoutesBuilder(cfg *config.Config, s *store.Store) chi.Router {
 	handlers := URLHandler{storage: s, cfg: cfg}
 	r := chi.NewRouter()
 	r.Use(logger.RequestLogger)
 	//r.Use(middlewares.GzipHandle)
-	r.Use(middleware.Compress(5))
+	r.Use(middleware.Compress(5, defaultCompressibleContentTypes...))
 	r.Route("/api", func(r chi.Router) {
 		r.Post("/shorten", handlers.Shorten)
 	})
