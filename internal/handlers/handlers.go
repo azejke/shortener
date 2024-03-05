@@ -31,14 +31,14 @@ func (u *URLHandler) SearchURL(res http.ResponseWriter, req *http.Request) {
 		res.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	res.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	res.Header().Set("Content-Type", "application/x-gzip")
 	res.Header().Set("Location", urlValue)
 	res.WriteHeader(http.StatusTemporaryRedirect)
 }
 
 func (u *URLHandler) WriteURL(res http.ResponseWriter, req *http.Request) {
 	contentTypeValue := req.Header.Get("Content-Type")
-	if contentTypeValue != "text/plain; charset=utf-8" {
+	if contentTypeValue != "application/x-gzip" {
 		res.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -49,7 +49,7 @@ func (u *URLHandler) WriteURL(res http.ResponseWriter, req *http.Request) {
 	}
 	generatedKey := utils.GenerateRandomString(10)
 	u.storage.Insert(generatedKey, string(body))
-	res.Header().Set(`Content-Type`, `text/plain; charset=utf-8`)
+	res.Header().Set(`Content-Type`, `application/x-gzip`)
 	res.WriteHeader(http.StatusCreated)
 	result := fmt.Sprintf("%s/%s", u.cfg.BaseURL, generatedKey)
 	_, _ = res.Write([]byte(result))
