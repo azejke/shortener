@@ -46,7 +46,7 @@ func TestURLHandler_SearchURL(t *testing.T) {
 			name:  "Exist id test",
 			urlID: "/knKvtdNoxw",
 			want: want{
-				contentType: "text/plain",
+				contentType: "text/plain; charset=utf-8",
 				statusCode:  307,
 				location:    "https://practicum.yandex.kz/",
 			},

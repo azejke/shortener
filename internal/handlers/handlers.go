@@ -50,7 +50,7 @@ func (u *URLHandler) SearchURL(res http.ResponseWriter, req *http.Request) {
 		res.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	res.Header().Set("Content-Type", "text/plain")
+	res.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	fmt.Println("urlValue", urlValue)
 	res.Header().Set("Location", urlValue)
 	res.WriteHeader(http.StatusTemporaryRedirect)
@@ -58,7 +58,7 @@ func (u *URLHandler) SearchURL(res http.ResponseWriter, req *http.Request) {
 
 func (u *URLHandler) WriteURL(res http.ResponseWriter, req *http.Request) {
 	contentTypeValue := req.Header.Get("Content-Type")
-	if !u.checkContentType(contentTypeValue, "text/plain") {
+	if !u.checkContentType(contentTypeValue, "text/plain; charset=utf-8") {
 		res.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -68,7 +68,7 @@ func (u *URLHandler) WriteURL(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	res.Header().Set(`Content-Type`, `text/plain`)
+	res.Header().Set(`Content-Type`, `text/plain; charset=utf-8`)
 	res.WriteHeader(http.StatusCreated)
 	key := u.generateAndInsertKey(string(body))
 	result := fmt.Sprintf("%s/%s", u.cfg.BaseURL, key)
