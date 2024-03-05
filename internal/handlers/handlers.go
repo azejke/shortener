@@ -62,8 +62,8 @@ func (u *URLHandler) WriteURL(res http.ResponseWriter, req *http.Request) {
 	}
 	var body []byte
 	if contentTypeValue == "text/plain; charset=utf-8" {
-		body, err := io.ReadAll(req.Body)
-		if err != nil || len(body) == 0 {
+		body, _ = io.ReadAll(req.Body)
+		if len(body) == 0 {
 			res.WriteHeader(http.StatusBadRequest)
 			return
 		}
