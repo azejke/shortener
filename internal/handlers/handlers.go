@@ -32,6 +32,7 @@ func (u *URLHandler) SearchURL(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 	res.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	fmt.Println(urlValue)
 	res.Header().Set("Location", urlValue)
 	res.WriteHeader(http.StatusTemporaryRedirect)
 }

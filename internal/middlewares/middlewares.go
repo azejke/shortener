@@ -19,19 +19,28 @@ func (w gzipWriter) Write(b []byte) (int, error) {
 func GzipHandle(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		contentType := r.Header.Get("Content-Type")
-		if strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") && (contentType == "application/json" || contentType == "text/html") {
-			gz, err := gzip.NewWriterLevel(w, gzip.BestSpeed)
-			if err != nil {
-				io.WriteString(w, err.Error())
+		if contentType == "application/json" || contentType == "text/html" {
+			if strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
+				gz := gzip.NewWriter(w)
+				defer gz.Close()
+				w.Header().Set("Content-Encoding", "gzip")
+				next.ServeHTTP(gzipWriter{ResponseWriter: w, Writer: gz}, r)
+				return
+			} else if strings.Contains(r.Header.Get("Content-Encoding"), "gzip") {
+				gz, err := gzip.NewReader(r.Body)
+				if err != nil {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
+				defer gz.Close()
+				r.Body = gz
+				next.ServeHTTP(w, r)
+			} else {
+				next.ServeHTTP(w, r)
 				return
 			}
-			defer gz.Close()
-			w.Header().Set("Content-Encoding", "gzip")
-			next.ServeHTTP(gzipWriter{ResponseWriter: w, Writer: gz}, r)
-			return
-		} else {
-			next.ServeHTTP(w, r)
-			return
 		}
+		next.ServeHTTP(w, r)
+		return
 	})
 }
