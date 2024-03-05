@@ -12,6 +12,9 @@ func RoutesBuilder(cfg *config.Config, s *store.Store) chi.Router {
 	handlers := URLHandler{storage: s}
 	r := chi.NewRouter()
 	r.Use(logger.RequestLogger)
+	r.Post("/api/shorten", func(writer http.ResponseWriter, request *http.Request) {
+		handlers.Shorten(writer, request, cfg)
+	})
 	r.Get("/{id}", handlers.SearchURL)
 	r.Post("/", func(writer http.ResponseWriter, request *http.Request) {
 		handlers.WriteURL(writer, request, cfg)

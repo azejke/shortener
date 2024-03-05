@@ -1,7 +1,7 @@
 package logger
 
 import (
-	"github.com/azejke/shortener/internal/api"
+	"github.com/azejke/shortener/internal/models"
 	"go.uber.org/zap"
 	"net/http"
 	"time"
@@ -32,7 +32,7 @@ func InitLogger(level string) error {
 func RequestLogger(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
-		rw := api.NewResponseWriter(w)
+		rw := models.NewResponseWriter(w)
 		next.ServeHTTP(rw, r)
 		duration := time.Since(start)
 		Log.Info("Request Logger",
