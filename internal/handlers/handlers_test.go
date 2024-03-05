@@ -1,7 +1,10 @@
 package handlers
 
 import (
+	"bytes"
+	"encoding/json"
 	"github.com/azejke/shortener/internal/config"
+	"github.com/azejke/shortener/internal/models"
 	"github.com/azejke/shortener/internal/store"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -22,7 +25,7 @@ func TestMain(m *testing.M) {
 	os.Exit(exitVal)
 }
 
-func TestSearchURL(t *testing.T) {
+func TestURLHandler_SearchURL(t *testing.T) {
 	storage.Insert("knKvtdNoxw", "https://practicum.yandex.kz/")
 	ts := httptest.NewServer(RoutesBuilder(cfg, storage))
 	defer ts.Close()
@@ -71,7 +74,7 @@ func TestSearchURL(t *testing.T) {
 	}
 }
 
-func TestWriteURL(t *testing.T) {
+func TestURLHandler_WriteURL(t *testing.T) {
 	ts := httptest.NewServer(RoutesBuilder(cfg, storage))
 	defer ts.Close()
 
@@ -110,6 +113,59 @@ func TestWriteURL(t *testing.T) {
 			require.NoError(t, err)
 			assert.Equal(t, tt.want.statusCode, response.StatusCode)
 			assert.Equal(t, tt.want.contentType, response.Header.Get("Content-Type"))
+			err = response.Body.Close()
+			require.NoError(t, err)
+		})
+	}
+}
+
+func TestURLHandler_Shorten(t *testing.T) {
+	ts := httptest.NewServer(RoutesBuilder(cfg, storage))
+	defer ts.Close()
+
+	type want struct {
+		contentType string
+		statusCode  int
+	}
+	tests := []struct {
+		name string
+		body models.ShortenRequest
+		want want
+	}{
+		{
+			name: "Pass correct url",
+			body: models.ShortenRequest{
+				URL: "https://practicum.yandex.kz",
+			},
+			want: want{
+				statusCode:  201,
+				contentType: "application/json",
+			},
+		},
+		{
+			name: "Pass empty url",
+			body: models.ShortenRequest{
+				URL: "",
+			},
+			want: want{
+				statusCode: 400,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			jsonData, err := json.Marshal(tt.body)
+			require.NoError(t, err)
+			request, err := http.NewRequest(http.MethodPost, ts.URL+"/api/shorten", bytes.NewBuffer(jsonData))
+			require.NoError(t, err)
+			request.Header.Add("Content-Type", "application/json")
+			response, err := ts.Client().Do(request)
+			require.NoError(t, err)
+			assert.Equal(t, tt.want.statusCode, response.StatusCode)
+			if response.StatusCode == http.StatusCreated {
+				assert.Equal(t, tt.want.contentType, response.Header.Get("Content-Type"))
+			}
 			err = response.Body.Close()
 			require.NoError(t, err)
 		})
