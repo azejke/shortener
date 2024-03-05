@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"bytes"
+	"compress/gzip"
 	"encoding/json"
 	"fmt"
 	"github.com/azejke/shortener/internal/config"
@@ -10,7 +10,6 @@ import (
 	"github.com/azejke/shortener/internal/utils"
 	"github.com/go-chi/chi/v5"
 	"io"
-	"log"
 	"net/http"
 )
 
@@ -51,7 +50,6 @@ func (u *URLHandler) SearchURL(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 	res.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	fmt.Println("urlValue", urlValue)
 	res.Header().Set("Location", urlValue)
 	res.WriteHeader(http.StatusTemporaryRedirect)
 }
@@ -62,15 +60,30 @@ func (u *URLHandler) WriteURL(res http.ResponseWriter, req *http.Request) {
 		res.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	body, err := io.ReadAll(req.Body)
-	if err != nil || len(body) == 0 {
-		res.WriteHeader(http.StatusBadRequest)
-		return
-	}
+	var body []byte
+	if contentTypeValue == "text/plain; charset=utf-8" {
+		body, err := io.ReadAll(req.Body)
+		if err != nil || len(body) == 0 {
+			res.WriteHeader(http.StatusBadRequest)
+			return
+		}
+	} else {
+		gz, err := gzip.NewReader(req.Body)
+		if err != nil {
+			http.Error(res, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		defer gz.Close()
 
+		body, err = io.ReadAll(gz)
+		if err != nil {
+			http.Error(res, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+	key := u.generateAndInsertKey(string(body))
 	res.Header().Set(`Content-Type`, `text/plain; charset=utf-8`)
 	res.WriteHeader(http.StatusCreated)
-	key := u.generateAndInsertKey(string(body))
 	result := fmt.Sprintf("%s/%s", u.cfg.BaseURL, key)
 	_, _ = res.Write([]byte(result))
 }
@@ -81,31 +94,23 @@ func (u *URLHandler) Shorten(res http.ResponseWriter, req *http.Request) {
 		res.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	var url models.ShortenRequest
-	var buf bytes.Buffer
-	_, err := buf.ReadFrom(req.Body)
-	if err != nil {
-		http.Error(res, err.Error(), http.StatusBadRequest)
+	var sreq *models.ShortenRequest
+	if err := json.NewDecoder(req.Body).Decode(&sreq); err != nil {
+		http.Error(res, "Cant read body", http.StatusBadRequest)
 		return
 	}
-	if err = json.Unmarshal(buf.Bytes(), &url); err != nil {
-		http.Error(res, err.Error(), http.StatusBadRequest)
+	originalURL := sreq.URL
+	if originalURL == "" {
+		http.Error(res, "URL parameter is missing", http.StatusBadRequest)
 		return
 	}
-	if url.URL == "" {
-		http.Error(res, "Invalid request params", http.StatusInternalServerError)
-		return
-	}
-	var result models.ShortenResponse
-	key := u.generateAndInsertKey(url.URL)
-	result.Result = fmt.Sprintf("%s/%s", u.cfg.BaseURL, key)
-	resp, err := json.Marshal(result)
-	log.Println("resp", result.Result)
-	if err != nil {
-		http.Error(res, "Encoding error", http.StatusInternalServerError)
-		return
-	}
+	var sres models.ShortenResponse
+	key := u.generateAndInsertKey(originalURL)
+	sres.Result = fmt.Sprintf("%s/%s", u.cfg.BaseURL, key)
 	res.Header().Set(`Content-Type`, `application/json`)
 	res.WriteHeader(http.StatusCreated)
-	res.Write(resp)
+	if err := json.NewEncoder(res).Encode(sres); err != nil {
+		http.Error(res, "error encoding response", http.StatusInternalServerError)
+		return
+	}
 }

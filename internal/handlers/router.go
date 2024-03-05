@@ -12,6 +12,7 @@ var defaultCompressibleContentTypes = []string{
 	"text/html",
 	"text/css",
 	"text/plain",
+	"text/plain; charset=utf-8",
 	"text/xml",
 	"text/javascript",
 	"application/javascript",
@@ -24,10 +25,10 @@ func RoutesBuilder(cfg *config.Config, s *store.Store) chi.Router {
 	r.Use(logger.RequestLogger)
 	//r.Use(middlewares.GzipHandle)
 	r.Use(middleware.Compress(5, defaultCompressibleContentTypes...))
+	r.Post("/", handlers.WriteURL)
+	r.Get("/{id}", handlers.SearchURL)
 	r.Route("/api", func(r chi.Router) {
 		r.Post("/shorten", handlers.Shorten)
 	})
-	r.Get("/{id}", handlers.SearchURL)
-	r.Post("/", handlers.WriteURL)
 	return r
 }
