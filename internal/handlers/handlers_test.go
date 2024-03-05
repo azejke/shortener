@@ -148,7 +148,7 @@ func TestURLHandler_Shorten(t *testing.T) {
 				URL: "",
 			},
 			want: want{
-				statusCode: 500,
+				statusCode: 400,
 			},
 		},
 	}
